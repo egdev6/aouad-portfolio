@@ -8,3 +8,7 @@ overrides:
 allowBuilds:
   esbuild: true
   sharp: false
+
+minimumReleaseAgeExclude:
+  - '@astrojs/markdown-satteri@0.4.1'
+  - astro@7.3.2

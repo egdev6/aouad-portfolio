@@ -119,7 +119,7 @@ export const content = {
       portraitAlt: "Andrea Díez creando contenido con su móvil y una luz",
       factsLabel: "Experiencia profesional",
       brandsFact: ["+ 100", "marcas"],
-      experienceFact: ["+ 2 años", "creando"],
+      experienceFact: ["+ 4 años", "creando"],
       locationFact: ["40 años,", "València"],
     },
     about: {
@@ -215,7 +215,7 @@ export const content = {
       portraitAlt: "Andrea Díez creating content with her phone and a light",
       factsLabel: "Professional experience",
       brandsFact: ["100+", "brands"],
-      experienceFact: ["2+ years", "creating"],
+      experienceFact: ["4+ years", "creating"],
       locationFact: ["40 years old,", "València"],
     },
     about: {

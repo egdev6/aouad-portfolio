@@ -2,73 +2,137 @@
   {
     "key": "apps-tech",
     "videos": [
-      { "youtubeId": "" },
-      { "youtubeId": "" },
-      { "youtubeId": "" },
-      { "youtubeId": "" }
+      {
+        "youtubeId": "XGPzDDacIEc"
+      },
+      {
+        "youtubeId": "H_XRF1eSqjg"
+      },
+      {
+        "youtubeId": "YdMkb0URlUI"
+      },
+      {
+        "youtubeId": "_GXaYl7nJXg"
+      }
     ]
   },
   {
     "key": "education",
     "videos": [
-      { "youtubeId": "" },
-      { "youtubeId": "" },
-      { "youtubeId": "" },
-      { "youtubeId": "" }
+      {
+        "youtubeId": "BllRtlYMPDs"
+      },
+      {
+        "youtubeId": "gtRIMIvp7Jw"
+      },
+      {
+        "youtubeId": "taV6wSBTG5c"
+      },
+      {
+        "youtubeId": "4rQr48mN63E"
+      }
     ]
   },
   {
     "key": "lifestyle",
     "videos": [
-      { "youtubeId": "" },
-      { "youtubeId": "" },
-      { "youtubeId": "" },
-      { "youtubeId": "" }
+      {
+        "youtubeId": "1nIz6zgKDJI"
+      },
+      {
+        "youtubeId": "wcxKhtJCvGQ"
+      },
+      {
+        "youtubeId": "ic56tyWI1yo"
+      },
+      {
+        "youtubeId": "dDFLh2FrSCI"
+      }
     ]
   },
   {
     "key": "travel-apps",
     "videos": [
-      { "youtubeId": "" },
-      { "youtubeId": "" },
-      { "youtubeId": "" },
-      { "youtubeId": "" }
+      {
+        "youtubeId": "T5lN51Er3QY"
+      },
+      {
+        "youtubeId": "VHckNTS8mvU"
+      },
+      {
+        "youtubeId": "D6UtHjOZvJk"
+      },
+      {
+        "youtubeId": "4xjGR4vZWjQ"
+      }
     ]
   },
   {
     "key": "gaming",
     "videos": [
-      { "youtubeId": "" },
-      { "youtubeId": "" },
-      { "youtubeId": "" },
-      { "youtubeId": "" }
+      {
+        "youtubeId": "R0vlWFwcBbQ"
+      },
+      {
+        "youtubeId": "bMmCLfx7FRI"
+      },
+      {
+        "youtubeId": "GrgYuMNTIb8"
+      },
+      {
+        "youtubeId": "56TUDA8-4PI"
+      }
     ]
   },
   {
     "key": "services",
     "videos": [
-      { "youtubeId": "" },
-      { "youtubeId": "" },
-      { "youtubeId": "" },
-      { "youtubeId": "" }
+      {
+        "youtubeId": "9fD6y2_jevE"
+      },
+      {
+        "youtubeId": "uhDXZILs-aI"
+      },
+      {
+        "youtubeId": "kKcNg5McH5g"
+      },
+      {
+        "youtubeId": "c5xAy-3mlhs"
+      }
     ]
   },
   {
     "key": "beauty",
     "videos": [
-      { "youtubeId": "" },
-      { "youtubeId": "" },
-      { "youtubeId": "" },
-      { "youtubeId": "" }
+      {
+        "youtubeId": "0lA9GB_FDVQ"
+      },
+      {
+        "youtubeId": "Pxee8qV5zeQ"
+      },
+      {
+        "youtubeId": "Uufs7wQ3sow"
+      },
+      {
+        "youtubeId": "jbfe2TFqDT4"
+      }
     ]
   },
   {
     "key": "events-hospitality",
     "videos": [
-      { "youtubeId": "" },
-      { "youtubeId": "" },
-      { "youtubeId": "" },
-      { "youtubeId": "" }
+      {
+        "youtubeId": "p7ZOHJgXVUQ"
+      },
+      {
+        "youtubeId": "tc7AaVtwhys"
+      },
+      {
+        "youtubeId": "bkyLneERjH0"
+      },
+      {
+        "youtubeId": "C_MrTnxaGMk"
+      }
     ]
   }
 ]
