@@ -9,16 +9,31 @@ npm install
 npm run dev
 ```
 
-## Validation
+## CI validation
+
+GitHub Actions runs the `Validate` job in the `CI` workflow for every pull request and every push to `main`. Configure the `Validate` check as a required merge gate for `main` in the repository branch rules after its first successful remote run.
+
+Run the CI equivalent locally:
 
 ```bash
+npm ci
 npm run check
 npm run build
 ```
 
+## Netlify deployment
+
+Netlify uses the native Git integration and the versioned `netlify.toml` configuration.
+
+1. Import the repository in Netlify and leave the base directory empty (the repository root).
+2. Set `main` as the production branch in the Netlify UI; Netlify does not provide a versioned configuration key for selecting it.
+3. Keep deploy previews enabled only if they are wanted for pull-request review.
+
+The build command is `npm run build`, the publish directory is `dist`, and builds use Node `22.12.0`. No GitHub deployment secrets are required.
+
 ## Lighthouse CI
 
-Run the repeatable local audit with Chrome or Chromium installed and available on your `PATH`:
+Lighthouse is intentionally local and is not part of GitHub Actions because its browser setup and metrics are environment-sensitive. Run the repeatable local audit with Chrome or Chromium installed and available on your `PATH`:
 
 > On WSL, Linux Chrome or Chromium is required. Set `CHROME_PATH` to override automatic Linux browser discovery.
 
