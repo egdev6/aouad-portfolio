@@ -1,0 +1,734 @@
+---
+import portfolioVideoCatalog from '../data/portfolio-videos.json';
+import type { PortfolioContent } from '../i18n/content';
+
+interface Props {
+  copy: PortfolioContent;
+}
+
+type CatalogVideo = {
+  youtubeId: string;
+  source?: string;
+};
+
+type CatalogSection = {
+  key: string;
+  videos: CatalogVideo[];
+};
+
+const sharedPlaceholderSource = '/media/video-placeholder.mp4';
+
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === 'object' && value !== null && !Array.isArray(value);
+
+const validatePortfolioCatalog = (
+  catalog: unknown,
+  categories: PortfolioContent['work']['categories'],
+): CatalogSection[] => {
+  if (!Array.isArray(catalog)) {
+    throw new Error('Invalid portfolio video catalog: expected an array of sections.');
+  }
+
+  const errors: string[] = [];
+  const expectedKeys = categories.map(({ key }) => key);
+  const expectedKeySet = new Set<string>(expectedKeys);
+  const duplicateTranslationKeys = expectedKeys.filter((key, index) => expectedKeys.indexOf(key) !== index);
+  if (duplicateTranslationKeys.length > 0) {
+    errors.push(`translated categories contain duplicate keys: ${[...new Set(duplicateTranslationKeys)].join(', ')}`);
+  }
+
+  const catalogKeys = new Set<string>();
+  catalog.forEach((section, sectionIndex) => {
+    const sectionLocation = `section ${sectionIndex + 1}`;
+    if (!isRecord(section)) {
+      errors.push(`${sectionLocation} must be an object.`);
+      return;
+    }
+
+    if (typeof section.key !== 'string') {
+      errors.push(`${sectionLocation} must have a string key.`);
+    } else if (catalogKeys.has(section.key)) {
+      errors.push(`${sectionLocation} duplicates the key "${section.key}".`);
+    } else {
+      catalogKeys.add(section.key);
+      if (!expectedKeySet.has(section.key)) {
+        errors.push(`${sectionLocation} has unknown key "${section.key}".`);
+      }
+    }
+
+    if (!Array.isArray(section.videos)) {
+      errors.push(`${sectionLocation} must have a videos array.`);
+      return;
+    }
+
+    section.videos.forEach((video, videoIndex) => {
+      const videoLocation = `${sectionLocation}, video ${videoIndex + 1}`;
+      if (!isRecord(video)) {
+        errors.push(`${videoLocation} must be an object.`);
+        return;
+      }
+
+      const hasSource = typeof video.source === 'string' && video.source !== '';
+      if (video.source !== undefined && !hasSource) {
+        errors.push(`${videoLocation} source must be omitted or a non-empty string.`);
+      }
+
+      if (typeof video.youtubeId !== 'string') {
+        errors.push(`${videoLocation} must have a string youtubeId.`);
+      } else if (video.youtubeId !== '' && !/^[A-Za-z0-9_-]{11}$/.test(video.youtubeId)) {
+        errors.push(`${videoLocation} has malformed youtubeId "${video.youtubeId}".`);
+      }
+    });
+  });
+
+  const missingKeys = expectedKeys.filter((key) => !catalogKeys.has(key));
+  if (missingKeys.length > 0) {
+    errors.push(`catalog is missing section keys: ${missingKeys.join(', ')}.`);
+  }
+
+  if (errors.length > 0) {
+    throw new Error(`Invalid portfolio video catalog:\n- ${errors.join('\n- ')}`);
+  }
+
+  return catalog as CatalogSection[];
+};
+
+const { copy } = Astro.props;
+const localePaths = { es: '/', en: '/en/' } as const;
+const catalogSections = validatePortfolioCatalog(portfolioVideoCatalog, copy.work.categories);
+const categoriesByKey = new Map<string, PortfolioContent['work']['categories'][number]>(
+  copy.work.categories.map((category) => [category.key, category]),
+);
+const workCategories = catalogSections.map((section) => {
+  const category = categoriesByKey.get(section.key);
+  if (!category) {
+    throw new Error(`Missing translation for portfolio section key "${section.key}".`);
+  }
+
+  return {
+    ...category,
+    videos: section.videos.map((video, videoIndex) => ({
+      ...video,
+      id: `video-${section.key}-${videoIndex + 1}`,
+      label: copy.work.videoLabel(category.label, videoIndex + 1),
+    })),
+  };
+});
+
+const equipmentIcons = ['phone', 'microphone', 'panel', 'camera', 'stabilizer', 'tripod'] as const;
+const equipment = copy.creatorKit.equipment.map((label, index) => ({ label, icon: equipmentIcons[index] }));
+
+const brands = [
+  { name: 'El Corte Inglés Seguros', file: 'brand-01-el-corte-ingles-seguros.jpg' },
+  { name: 'Gana Energía', file: 'brand-02-gana-energia.jpg' },
+  { name: "McDonald's", file: 'brand-03-mcdonalds.png' },
+  { name: 'Apolo Arena', file: 'brand-04-apolo-arena.jpg' },
+  { name: 'Dogfy Diet', file: 'brand-05-dogfy-diet.jpg' },
+  { name: 'Velarte', file: 'brand-06-velarte.jpg' },
+  { name: 'Holafly', file: 'brand-07-holafly.jpg', crop: true },
+  { name: 'Primor', file: 'brand-08-primor.jpg' },
+  { name: 'Bella Aurora', file: 'brand-09-bella-aurora.jpg' },
+  { name: "L'Oréal Paris", file: 'brand-10-loreal-paris.jpg' },
+  { name: 'TaxDown', file: 'brand-11-taxdown.png' },
+  { name: 'Stage Entertainment', file: 'brand-12-stage-entertainment.jpg' },
+  { name: 'Charlotte Tilbury', file: 'brand-13-charlotte-tilbury.jpg' },
+  { name: 'Video Up!', file: 'brand-14-video-up.jpg' },
+  { name: "d'Alba Piedmont", file: 'brand-15-alba-piedmont.jpg' },
+  { name: 'DS Labs', file: 'brand-16-ds-labs.jpg' },
+  { name: 'Láserum', file: 'brand-17-laserum.jpg' },
+  { name: 'Acciona', file: 'brand-18-acciona.png' },
+  { name: 'aprendemas.com', file: 'brand-19-aprendemas.jpg', crop: true },
+  { name: 'IONOS', file: 'brand-20-ionos.png' },
+  { name: 'SoloCruceros', file: 'brand-21-solocruceros.jpg', crop: true },
+  { name: 'Saily', file: 'brand-22-saily.png' },
+  { name: 'BuscoUnChollo', file: 'brand-23-buscounchollo.jpg', crop: true },
+  { name: '3D Seguridad', file: 'brand-24-3d-seguridad.jpg', crop: true },
+];
+---
+
+<!doctype html>
+<html lang={copy.htmlLang}>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content={copy.metadata.description} />
+    <meta name="theme-color" content="#efe9e4" />
+    <link rel="alternate" hreflang="es" href="/" />
+    <link rel="alternate" hreflang="en" href="/en/" />
+    <link rel="alternate" hreflang="x-default" href="/" />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@400;500&display=swap" rel="stylesheet" />
+    <title>{copy.metadata.title}</title>
+  </head>
+  <body id="top">
+        <header class="site-header">
+          <nav class="shell site-nav" aria-label={copy.navigation.label}>
+            <a class="site-brand" href="#top" aria-label={`Andrea Díez — ${copy.footer.backToTop}`}>AD</a>
+            <div class="nav-controls">
+              <div class="section-links">
+                <a href="#sobre-mi">{copy.navigation.about}</a>
+                <a href="#trabajos">{copy.navigation.work}</a>
+                <a href="#kit-creador">{copy.navigation.creatorKit}</a>
+                <a href="#marcas">{copy.navigation.brands}</a>
+              </div>
+              <div class="language-switcher" aria-label={copy.language.selectorLabel}>
+                <a
+                  href={localePaths.es}
+                  hreflang="es"
+                  lang="es"
+                  aria-label={copy.language.currentEs}
+                  aria-current={copy.locale === 'es' ? 'page' : undefined}
+                  data-language-link
+                >{copy.language.es}</a>
+                <span aria-hidden="true">/</span>
+                <a
+                  href={localePaths.en}
+                  hreflang="en"
+                  lang="en"
+                  aria-label={copy.language.currentEn}
+                  aria-current={copy.locale === 'en' ? 'page' : undefined}
+                  data-language-link
+                >{copy.language.en}</a>
+              </div>
+            </div>
+            <button
+              class="menu-toggle"
+              type="button"
+              aria-controls="mobile-menu"
+              aria-expanded="false"
+              aria-label={copy.navigation.openMenuLabel}
+              data-open-menu-label={copy.navigation.openMenuLabel}
+              data-close-menu-label={copy.navigation.closeMenuLabel}
+            ><span class="menu-toggle-icon" aria-hidden="true"></span></button>
+          </nav>
+        </header>
+        <nav id="mobile-menu" class="mobile-menu" aria-label={copy.navigation.label} aria-hidden="true" inert></nav>
+
+    <main>
+      <section class="shell hero" aria-labelledby="page-title">
+        <div class="hero-copy">
+          <h1 id="page-title" class="name"><span class="first">Andrea</span><span>Díez</span></h1>
+          <p class="role">{copy.hero.role}</p>
+          <div class="contacts" aria-label={copy.hero.contactsLabel}>
+            <a class="contact" href="https://www.instagram.com/andreaonceuponadress" target="_blank" rel="noopener noreferrer" aria-label={copy.hero.instagramLabel}>
+              <svg viewBox="0 0 48 48" aria-hidden="true"><rect x="8" y="8" width="32" height="32" rx="9"/><circle cx="24" cy="24" r="8"/><circle cx="34" cy="14" r="2" class="icon-fill"/></svg>
+              <span>@andreaonceuponadress</span>
+            </a>
+            <a class="contact" href="https://www.tiktok.com/@andreaonceuponadress" target="_blank" rel="noopener noreferrer" aria-label={copy.hero.tiktokLabel}>
+              <svg viewBox="0 0 48 48" aria-hidden="true"><path d="M27 9v21a8 8 0 1 1-7-8"/><path d="M27 9c2 6 5 9 11 9"/></svg>
+              <span>@andreaonceuponadress</span>
+            </a>
+            <a class="contact" href="mailto:andreadiezperales@gmail.com" aria-label={copy.hero.emailLabel}>
+              <svg viewBox="0 0 48 48" aria-hidden="true"><rect x="5" y="10" width="38" height="28"/><path d="m6 11 18 16 18-16"/></svg>
+              <span>andreadiezperales@gmail.com</span>
+            </a>
+          </div>
+        </div>
+            <div class="hero-media">
+              <figure class="portrait hero-portrait">
+                <picture>
+                  <source
+                    type="image/webp"
+                    srcset="/images/portrait-5-480.webp 480w, /images/portrait-5-768.webp 768w, /images/portrait-5-1200.webp 1200w"
+                    sizes="(max-width: 512px) calc(100vw - 32px), (max-width: 820px) 480px, (max-width: 1260px) calc(37.6vw - 53px), 421px"
+                  />
+                  <img src="/images/portrait-5.jpg" width="2400" height="2097" alt={copy.hero.portraitAlt} fetchpriority="high" />
+                </picture>
+              </figure>
+          <div class="facts" aria-label={copy.hero.factsLabel}>
+            <div><span>{copy.hero.brandsFact[0]}</span>{copy.hero.brandsFact[1]}</div>
+            <div><span>{copy.hero.experienceFact[0]}</span>{copy.hero.experienceFact[1]}</div>
+            <div><span>{copy.hero.locationFact[0]}</span>{copy.hero.locationFact[1]}</div>
+          </div>
+        </div>
+      </section>
+
+          <section class="shell about reveal" id="sobre-mi" aria-labelledby="about-title" data-language-section>
+            <figure class="portrait about-portrait">
+              <picture>
+                <source
+                  type="image/webp"
+                  srcset="/images/portrait-2-480.webp 480w, /images/portrait-2-768.webp 768w, /images/portrait-2-900.webp 900w"
+                  sizes="(max-width: 570px) calc(76vw - 24px), (max-width: 820px) 410px, (max-width: 1160px) calc(45vw - 71px), 451px"
+                />
+                <img src="/images/portrait-2.jpg" width="900" height="1600" alt={copy.about.portraitAlt} loading="lazy" />
+              </picture>
+            </figure>
+        <div>
+          <h2 id="about-title" class="section-title"><span>{copy.about.titleFirst}</span><span class="about-accent">{copy.about.titleSecond}</span></h2>
+          <div class="about-copy">
+            <p>{copy.about.paragraphs[0]}</p>
+            <p>{copy.about.paragraphs[1]}</p>
+          </div>
+        </div>
+      </section>
+
+      <section id="trabajos" aria-label={copy.work.sectionLabel} data-language-section>
+        {workCategories.map(({ label, id, videos }) => (
+          <section class="portfolio-section reveal" id={id} aria-labelledby={`${id}-title`} data-language-section>
+            <div class="shell">
+              <div class="portfolio-head">
+                <h2 id={`${id}-title`} class="portfolio-title">{label}</h2>
+              </div>
+              <div class="work-grid">
+                {videos.map(({ id: videoId, label: videoLabel, youtubeId, source }) => (
+                  <article class="work-card">
+                    {youtubeId ? (
+                      <iframe
+                        src={`https://www.youtube-nocookie.com/embed/${youtubeId}`}
+                        title={videoLabel}
+                        loading="lazy"
+                        referrerpolicy="strict-origin-when-cross-origin"
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                        allowfullscreen
+                      ></iframe>
+                    ) : (
+                      <>
+                        <video id={videoId} controls playsinline preload="metadata" aria-label={videoLabel}>
+                          <source data-src={source ?? sharedPlaceholderSource} type="video/mp4" />
+                          {copy.work.videoFallback}
+                        </video>
+                        <button
+                          class="media-toggle"
+                          type="button"
+                          aria-controls={videoId}
+                          aria-label={`${copy.work.playLabel} ${videoLabel.toLowerCase()}`}
+                          aria-pressed="false"
+                          data-play-label={copy.work.playLabel}
+                          data-pause-label={copy.work.pauseLabel}
+                          data-generic-video-label={copy.work.genericVideoLabel}
+                        ></button>
+                      </>
+                    )}
+                  </article>
+                ))}
+              </div>
+            </div>
+          </section>
+        ))}
+      </section>
+
+      <section class="creator-kit reveal" id="kit-creador" aria-labelledby="kit-title" data-language-section>
+        <div class="shell kit-grid">
+          <figure class="device">
+            <img src="/images/page-2/creator-kit.jpg" width="604" height="799" alt={copy.creatorKit.imageAlt} loading="lazy" />
+          </figure>
+          <div>
+            <h2 id="kit-title" class="visually-hidden">{copy.creatorKit.title}</h2>
+            <ul class="equipment">
+              {equipment.map(({ label, icon }) => (
+                <li>
+                  {icon === 'phone' && <svg class="equipment-icon" viewBox="0 0 32 32" aria-hidden="true"><rect x="9" y="3" width="14" height="26" rx="3"/><path d="M14 6h4M14 26h4"/></svg>}
+                  {icon === 'microphone' && <svg class="equipment-icon" viewBox="0 0 32 32" aria-hidden="true"><rect x="11" y="3" width="10" height="16" rx="5"/><path d="M7 14v2a9 9 0 0 0 18 0v-2M16 25v4M11 29h10"/></svg>}
+                  {icon === 'panel' && <svg class="equipment-icon" viewBox="0 0 32 32" aria-hidden="true"><rect x="4" y="5" width="24" height="17" rx="2"/><path d="M9 10h14M9 14h14M9 18h8M16 22v6M11 28h10"/></svg>}
+                  {icon === 'camera' && <svg class="equipment-icon" viewBox="0 0 32 32" aria-hidden="true"><path d="M5 11h5l2-4h8l2 4h5a2 2 0 0 1 2 2v13H3V13a2 2 0 0 1 2-2Z"/><circle cx="16" cy="18" r="5"/></svg>}
+                  {icon === 'stabilizer' && <svg class="equipment-icon" viewBox="0 0 32 32" aria-hidden="true"><path d="M11 4h10v7H11zM16 11v6M10 17h12M10 17v7l-4 4M22 17v7l4 4M16 17v11"/></svg>}
+                  {icon === 'tripod' && <svg class="equipment-icon" viewBox="0 0 32 32" aria-hidden="true"><circle cx="16" cy="9" r="6"/><path d="M16 15v4M10 19h12M16 19 9 29M16 19l7 10M16 19v10"/></svg>}
+                  <span>{label}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <section class="brands reveal" id="marcas" aria-labelledby="brands-title" data-language-section>
+        <div class="shell">
+          <h2 id="brands-title" class="brands-title"><span class="accent">{copy.brands.title}</span><span class="subline">{copy.brands.subtitle}</span></h2>
+          <div class="brand-grid">
+            {brands.map(({ name, file, crop }) => (
+              <figure class="brand-mark">
+                <span class:list={['brand-media', { 'crop-canvas': crop }]}>
+                  <img src={`/images/page-2/${file}`} alt={copy.brands.imageAlt(name)} loading="lazy" />
+                </span>
+              </figure>
+            ))}
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="shell footer">
+      <p class="footer-title">{copy.footer.callToAction.split('\n').map((line, index) => <>{line}{index < copy.footer.callToAction.split('\n').length - 1 && <br />}</>)}</p>
+      <div class="footer-links">
+        <a href="mailto:andreadiezperales@gmail.com">{copy.footer.email}</a>
+        <a href="https://www.instagram.com/andreaonceuponadress" target="_blank" rel="noopener noreferrer">{copy.footer.instagram}</a>
+        <a href="#top">{copy.footer.backToTop}</a>
+      </div>
+    </footer>
+
+    <script>
+          const videos = [...document.querySelectorAll<HTMLVideoElement>('.work-card video')];
+
+          const loadVideo = (video: HTMLVideoElement) => {
+            if (video.dataset.videoLoaded === 'true') return;
+            const source = video.querySelector<HTMLSourceElement>('source[data-src]');
+            const sourceUrl = source?.dataset.src;
+            if (!sourceUrl) return;
+
+            source.src = sourceUrl;
+            video.dataset.videoLoaded = 'true';
+            video.load();
+          };
+
+          const updateToggle = (video: HTMLVideoElement) => {
+        const toggle = video.parentElement?.querySelector<HTMLButtonElement>('.media-toggle');
+        if (!toggle) return;
+        const isPlaying = !video.paused && !video.ended;
+        const action = isPlaying ? toggle.dataset.pauseLabel : toggle.dataset.playLabel;
+        const label = video.getAttribute('aria-label')?.toLowerCase() ?? toggle.dataset.genericVideoLabel;
+        toggle.setAttribute('aria-pressed', String(isPlaying));
+        toggle.setAttribute('aria-label', `${action} ${label}`);
+      };
+
+      videos.forEach((video) => {
+        const toggle = video.parentElement?.querySelector<HTMLButtonElement>('.media-toggle');
+        toggle?.addEventListener('click', () => {
+          if (video.paused || video.ended) {
+            loadVideo(video);
+            void video.play();
+          } else {
+            video.pause();
+          }
+        });
+        video.addEventListener('play', () => {
+          videos.forEach((otherVideo) => {
+            if (otherVideo !== video && !otherVideo.paused) otherVideo.pause();
+          });
+          updateToggle(video);
+        });
+        video.addEventListener('pause', () => updateToggle(video));
+        video.addEventListener('ended', () => updateToggle(video));
+      });
+
+          if ('IntersectionObserver' in window) {
+            const videoObserver = new IntersectionObserver((entries) => {
+              entries.forEach((entry) => {
+                if (entry.isIntersecting && entry.target instanceof HTMLVideoElement) {
+                  loadVideo(entry.target);
+                  videoObserver.unobserve(entry.target);
+                }
+              });
+            }, { rootMargin: '0px 0px 200px 0px' });
+            videos.forEach((video) => videoObserver.observe(video));
+          } else {
+            videos.forEach(loadVideo);
+          }
+
+          const languageSections = [...document.querySelectorAll<HTMLElement>('[data-language-section]')];
+      const currentSectionId = () => {
+        if (window.location.hash) return window.location.hash;
+        const viewportCenter = window.innerHeight / 2;
+        const firstSection = languageSections[0];
+        if (!firstSection || firstSection.getBoundingClientRect().top > viewportCenter) return '';
+        return languageSections.reduce((nearest, section) => {
+          const distance = Math.abs(section.getBoundingClientRect().top - viewportCenter);
+          return distance < nearest.distance ? { id: section.id, distance } : nearest;
+        }, { id: '', distance: Number.POSITIVE_INFINITY }).id;
+      };
+
+          document.querySelectorAll<HTMLAnchorElement>('[data-language-link]').forEach((link) => {
+            link.addEventListener('click', () => {
+              const sectionId = currentSectionId();
+              if (!sectionId) return;
+              const destination = new URL(link.href);
+              destination.hash = sectionId.replace(/^#/, '');
+              link.href = destination.toString();
+            });
+          });
+
+          const siteNav = document.querySelector<HTMLElement>('.site-nav');
+          const siteBrand = document.querySelector<HTMLAnchorElement>('.site-brand');
+          const navigationControls = document.querySelector<HTMLElement>('.nav-controls');
+          const menuToggle = document.querySelector<HTMLButtonElement>('.menu-toggle');
+          const mobileMenu = document.querySelector<HTMLElement>('#mobile-menu');
+          const mobileMenuQuery = window.matchMedia('(max-width: 820px)');
+
+          if (siteNav && siteBrand && navigationControls && menuToggle && mobileMenu) {
+            const controlsPlaceholder = document.createComment('navigation-controls');
+            siteNav.insertBefore(controlsPlaceholder, navigationControls);
+            let menuIsOpen = false;
+
+            const closeMenu = (restoreFocus = false) => {
+              menuIsOpen = false;
+              mobileMenu.classList.remove('is-open');
+              mobileMenu.setAttribute('aria-hidden', 'true');
+              mobileMenu.setAttribute('inert', '');
+              menuToggle.setAttribute('aria-expanded', 'false');
+              menuToggle.setAttribute('aria-label', menuToggle.dataset.openMenuLabel ?? 'Open navigation menu');
+              document.documentElement.classList.remove('mobile-menu-open');
+              if (restoreFocus) menuToggle.focus();
+            };
+
+            const openMenu = () => {
+              if (!mobileMenuQuery.matches) return;
+              menuIsOpen = true;
+              mobileMenu.classList.add('is-open');
+              mobileMenu.setAttribute('aria-hidden', 'false');
+              mobileMenu.removeAttribute('inert');
+              menuToggle.setAttribute('aria-expanded', 'true');
+              menuToggle.setAttribute('aria-label', menuToggle.dataset.closeMenuLabel ?? 'Close navigation menu');
+              document.documentElement.classList.add('mobile-menu-open');
+              const firstMenuLink = mobileMenu.querySelector<HTMLElement>('a[href], button:not([disabled])');
+              requestAnimationFrame(() => firstMenuLink?.focus());
+            };
+
+            const syncNavigationLayout = () => {
+              const menuHadFocus = mobileMenu.contains(document.activeElement);
+              closeMenu(menuHadFocus && !mobileMenuQuery.matches);
+              if (mobileMenuQuery.matches) {
+                if (!mobileMenu.contains(navigationControls)) mobileMenu.append(navigationControls);
+              } else if (!siteNav.contains(navigationControls)) {
+                controlsPlaceholder.after(navigationControls);
+              }
+            };
+
+            menuToggle.addEventListener('click', () => {
+              if (menuIsOpen) {
+                closeMenu();
+              } else {
+                openMenu();
+              }
+            });
+
+            document.addEventListener('keydown', (event) => {
+              if (!menuIsOpen || !mobileMenuQuery.matches) return;
+              if (event.key === 'Escape') {
+                event.preventDefault();
+                closeMenu(true);
+                return;
+              }
+              if (event.key !== 'Tab') return;
+
+              const focusableElements = [
+                siteBrand,
+                menuToggle,
+                ...mobileMenu.querySelectorAll<HTMLElement>('a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])'),
+              ];
+              const currentIndex = focusableElements.indexOf(document.activeElement as HTMLElement);
+              const nextIndex = event.shiftKey
+                ? currentIndex <= 0 ? focusableElements.length - 1 : currentIndex - 1
+                : currentIndex === focusableElements.length - 1 ? 0 : currentIndex + 1;
+              event.preventDefault();
+              focusableElements[nextIndex]?.focus();
+            });
+
+            navigationControls.querySelectorAll<HTMLAnchorElement>('a').forEach((link) => {
+              link.addEventListener('click', () => {
+                if (menuIsOpen) closeMenu();
+              });
+            });
+            siteBrand.addEventListener('click', () => {
+              if (menuIsOpen) closeMenu();
+            });
+            mobileMenuQuery.addEventListener('change', syncNavigationLayout);
+            syncNavigationLayout();
+          }
+
+          const revealElements = document.querySelectorAll<HTMLElement>('.reveal');
+      if ('IntersectionObserver' in window) {
+        const observer = new IntersectionObserver((entries) => {
+          entries.forEach((entry) => {
+            if (entry.isIntersecting && entry.target instanceof HTMLElement) {
+              entry.target.classList.add('visible');
+              observer.unobserve(entry.target);
+            }
+          });
+        }, { threshold: 0.08 });
+        revealElements.forEach((element) => observer.observe(element));
+      } else {
+        revealElements.forEach((element) => element.classList.add('visible'));
+      }
+
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => document.documentElement.classList.add('scroll-ready'));
+      });
+    </script>
+  </body>
+</html>
+
+<style>
+  :root { --background: #efe9e4; --surface: #f7f3ef; --ink: #23211f; --muted: #756c65; --border: #c9bfb7; --accent: #ce985d; --ochre: #8a5d35; --display: 'Playfair Display', Georgia, serif; --body: 'DM Sans', 'Helvetica Neue', Arial, sans-serif; }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: auto; background: var(--background); }
+  html.scroll-ready { scroll-behavior: smooth; }
+  body { margin: 0; min-width: 0; overflow-x: hidden; color: var(--ink); background: var(--background); font-family: var(--body); font-size: 16px; line-height: 1.55; }
+  img { display: block; max-width: 100%; }
+  a { color: inherit; }
+  button, a { touch-action: manipulation; }
+  a:focus-visible, button:focus-visible { outline: 2px solid var(--ink); outline-offset: 5px; }
+  #sobre-mi, #trabajos, #kit-creador, #marcas, .portfolio-section { scroll-margin-top: 100px; }
+  .shell { width: min(1212px, calc(100% - 48px)); margin-inline: auto; }
+  .site-header { position: sticky; z-index: 50; top: 0; border-bottom: 1px solid rgb(117 108 101 / 28%); background: rgb(239 233 228 / 92%); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); }
+  .site-nav, .nav-controls, .section-links, .language-switcher { display: flex; align-items: center; }
+  .site-nav { justify-content: flex-end; gap: 28px; min-height: 64px; color: var(--muted); font-size: 16px; }
+  .site-brand { margin-right: auto; color: var(--ink); font-family: var(--display); font-size: 30px; line-height: 1; letter-spacing: -.04em; }
+  .nav-controls, .section-links { gap: 28px; }
+  .language-switcher { gap: 7px; font-size: 14px; font-weight: 700; letter-spacing: .08em; }
+  .site-nav a, .mobile-menu a { display: flex; align-items: center; min-height: 44px; text-decoration: none; white-space: nowrap; }
+  .site-nav a:hover, .site-nav a:focus-visible, .mobile-menu a:hover, .mobile-menu a:focus-visible { color: var(--ink); text-decoration: underline; text-underline-offset: 5px; }
+  .language-switcher a[aria-current='page'] { color: var(--ink); text-decoration: underline; text-underline-offset: 5px; }
+  .menu-toggle, .mobile-menu { display: none; }
+  .hero { display: grid; grid-template-columns: 1.36fr .82fr; align-items: center; gap: 92px; min-height: 704px; padding: 42px 0 72px; }
+  .name, .section-title, .portfolio-title, .brands-title, .footer-title { font-family: var(--display); font-weight: 400; letter-spacing: -.035em; }
+  .name { margin: 0 0 74px; font-size: clamp(104px, 11.5vw, 166px); line-height: .83; }
+  .name span, .section-title span, .footer-title span { display: block; }
+  .first, .about-accent, .brands-title .accent { color: var(--accent); }
+  .role { margin: 0 0 32px; color: #a27950; font-size: 29px; font-weight: 700; line-height: 1.1; letter-spacing: .01em; text-transform: uppercase; }
+  .contacts { display: grid; gap: 20px; }
+  .contact { display: flex; align-items: center; gap: 17px; min-height: 44px; color: var(--ochre); font-size: 21px; font-weight: 700; text-decoration: none; }
+  .contact:hover { text-decoration: underline; text-underline-offset: 4px; }
+  .contact svg { width: 48px; height: 48px; flex: 0 0 48px; fill: none; stroke: var(--ink); stroke-linecap: round; stroke-width: 1.6; }
+  .contact .icon-fill { fill: var(--ink); stroke: none; }
+  .portrait { margin: 0; overflow: hidden; border-radius: 48% 48% 0 0; }
+  .portrait picture { display: block; width: 100%; height: 100%; }
+  .portrait img { width: 100%; height: 100%; object-fit: cover; }
+  .hero-portrait { aspect-ratio: .72; }
+  .hero-portrait img { object-position: 53% 50%; }
+  .facts { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; margin-top: 34px; text-align: center; font-family: var(--display); font-size: 23px; line-height: 1.25; }
+  .facts span { display: block; }
+  .about { display: grid; grid-template-columns: .9fr 1.1fr; align-items: center; gap: 110px; min-height: 768px; padding: 92px 0; }
+  .about-portrait { justify-self: center; width: min(100%, 490px); aspect-ratio: .82; }
+  .about-portrait img { object-position: center; }
+  .section-title { margin: 0 0 45px; font-size: clamp(104px, 11.5vw, 166px); line-height: .83; }
+  .about-copy { max-width: 56ch; }
+  .about-copy p { margin: 0; font-size: 19px; font-weight: 500; line-height: 1.65; text-wrap: pretty; }
+  .about-copy p + p { margin-top: 22px; color: var(--ochre); }
+  .portfolio-section { min-height: 768px; padding: 78px 0 88px; border-top: 1px solid rgb(201 191 183 / 40%); }
+  .portfolio-head { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 38px; }
+  .portfolio-title { margin: 0; font-size: clamp(58px, 6.2vw, 92px); line-height: 1; letter-spacing: -.025em; }
+  .work-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 25px; }
+  .work-card { position: relative; min-width: 0; aspect-ratio: 9 / 16; overflow: hidden; background: var(--surface); }
+  .work-card video, .work-card iframe { display: block; width: 100%; height: 100%; border: 0; background: var(--surface); }
+  .work-card video { object-fit: cover; }
+  .media-toggle { position: absolute; z-index: 2; inset: 0 0 64px; width: 100%; min-height: 44px; padding: 0; border: 0; background: transparent; cursor: pointer; }
+  .work-card:focus-within { outline: 2px solid var(--ink); outline-offset: 5px; }
+  .work-card video:focus-visible { outline: 0; }
+  .media-toggle:focus-visible { outline: 2px solid var(--ink); outline-offset: -6px; }
+  .creator-kit { padding: 92px 0 112px; border-top: 1px solid rgb(201 191 183 / 40%); }
+  .kit-grid { display: grid; grid-template-columns: 1fr 1fr; align-items: center; gap: 98px; }
+  .device { margin: 0; padding: 18px 18px 22px; border: 3px solid #716d68; border-radius: 30px; background: #3b3936; box-shadow: inset 0 0 0 2px #191817; }
+  .device img { width: 100%; height: auto; aspect-ratio: .76; border-radius: 9px; object-fit: cover; }
+  .equipment { margin: 0; padding: 0; list-style: none; color: var(--ochre); font-family: var(--display); font-size: clamp(25px, 2.4vw, 36px); line-height: 1.22; }
+  .equipment li { display: flex; align-items: center; gap: 16px; }
+  .equipment li + li { margin-top: 12px; }
+  .equipment-icon { width: 38px; height: 38px; flex: 0 0 38px; fill: none; stroke: currentColor; stroke-linecap: round; stroke-linejoin: round; stroke-width: 1.7; }
+  .brands { padding: 70px 0 112px; border-top: 1px solid rgb(201 191 183 / 40%); }
+  .brands-title { margin: 0 0 72px; font-size: clamp(76px, 9.2vw, 132px); line-height: .88; }
+  .brands-title .accent, .brands-title .subline { display: block; }
+  .brands-title .subline { margin-top: 14px; color: var(--ink); font-family: var(--body); font-size: clamp(24px, 2.6vw, 38px); font-weight: 500; line-height: 1.2; letter-spacing: 0; }
+  .brand-grid { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); align-items: center; gap: 18px 28px; }
+  .brand-mark { position: relative; min-width: 0; margin: 0; aspect-ratio: 3 / 2; overflow: hidden; }
+  .brand-media { position: absolute; inset: 14px; overflow: hidden; }
+  .brand-media img { width: 100%; height: 100%; object-fit: contain; object-position: center; }
+  .brand-media.crop-canvas img { object-fit: cover; }
+  .footer { display: flex; align-items: end; justify-content: space-between; padding: 72px 0 54px; border-top: 1px solid var(--border); }
+  .footer-title { margin: 0; font-size: clamp(48px, 6vw, 82px); line-height: 1; }
+  .footer-links { display: flex; gap: 24px; }
+  .footer-links a { display: flex; align-items: center; min-height: 44px; text-underline-offset: 4px; }
+  .reveal { opacity: 0; transform: translateY(18px); transition: opacity .7s ease, transform .7s ease; }
+  .reveal.visible { opacity: 1; transform: none; }
+  .visually-hidden { position: absolute; width: 1px; height: 1px; padding: 0; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
+  @media (max-width: 820px) {
+    .shell { width: min(calc(100% - 32px), 680px); }
+    html.mobile-menu-open, html.mobile-menu-open body { overflow: hidden; }
+    #sobre-mi, #trabajos, #kit-creador, #marcas, .portfolio-section { scroll-margin-top: 92px; }
+    .site-nav { position: relative; min-height: 56px; gap: 20px; font-size: 15px; }
+    .site-brand, .menu-toggle { position: relative; z-index: 1; }
+    .nav-controls { display: none; }
+    .menu-toggle { display: grid; width: 44px; min-height: 44px; padding: 0; place-items: center; border: 0; background: transparent; color: var(--ink); cursor: pointer; }
+    .menu-toggle-icon, .menu-toggle-icon::before, .menu-toggle-icon::after { display: block; width: 24px; height: 2px; border-radius: 999px; background: currentColor; transition: transform .2s ease, top .2s ease, background-color .2s ease; }
+    .menu-toggle-icon { position: relative; }
+    .menu-toggle-icon::before, .menu-toggle-icon::after { position: absolute; left: 0; content: ''; }
+    .menu-toggle-icon::before { top: -8px; }
+    .menu-toggle-icon::after { top: 8px; }
+    .menu-toggle[aria-expanded='true'] .menu-toggle-icon { background: transparent; }
+    .menu-toggle[aria-expanded='true'] .menu-toggle-icon::before { top: 0; transform: rotate(45deg); }
+    .menu-toggle[aria-expanded='true'] .menu-toggle-icon::after { top: 0; transform: rotate(-45deg); }
+    .mobile-menu { position: fixed; z-index: 49; inset: 0; display: flex; align-items: center; justify-content: center; padding: 88px 32px 32px; overflow-y: auto; background: var(--background); opacity: 0; visibility: hidden; pointer-events: none; transition: opacity .2s ease, visibility 0s linear .2s; }
+    .mobile-menu.is-open { opacity: 1; visibility: visible; pointer-events: auto; transition-delay: 0s; }
+    .mobile-menu .nav-controls { display: flex; flex-direction: column; align-items: center; gap: 34px; color: var(--muted); }
+    .mobile-menu .section-links { flex-direction: column; align-items: center; gap: 10px; }
+    .mobile-menu .section-links a { justify-content: center; min-height: 52px; color: var(--ink); font-family: var(--display); font-size: clamp(34px, 7vw, 52px); line-height: 1.1; }
+    .mobile-menu .language-switcher { font-size: 16px; }
+    .hero { display: flex; flex-direction: column; align-items: stretch; gap: clamp(24px, 4vh, 38px); min-height: calc(100vh - 56px); padding: clamp(24px, 5vh, 48px) 0 clamp(28px, 6vh, 64px); }
+    .hero { gap: clamp(24px, 4svh, 38px); min-height: calc(100svh - 56px); padding: clamp(24px, 5svh, 48px) 0 clamp(28px, 6svh, 64px); }
+    .name { margin-bottom: clamp(18px, 3vh, 34px); font-size: clamp(68px, min(17vw, 12vh), 112px); line-height: .84; }
+    .name { margin-bottom: clamp(18px, 3svh, 34px); font-size: clamp(68px, min(17vw, 12svh), 112px); }
+    .role { margin-bottom: clamp(10px, 2vh, 14px); font-size: clamp(18px, min(5vw, 3.2vh), 23px); line-height: 1.05; }
+    .role { margin-bottom: clamp(10px, 2svh, 14px); font-size: clamp(18px, min(5vw, 3.2svh), 23px); }
+    .contacts { gap: clamp(0px, 1svh, 4px); }
+    .contact { gap: clamp(8px, 2vw, 10px); min-width: 0; font-size: clamp(14px, 3.8vw, 16px); line-height: 1.25; overflow-wrap: anywhere; }
+    .contact svg { width: clamp(32px, 9vw, 38px); height: clamp(32px, 9vw, 38px); flex-basis: clamp(32px, 9vw, 38px); }
+    .hero-media { display: flex; flex-direction: column; }
+    .portrait { width: min(100%, 520px); align-self: center; }
+    .hero-portrait { width: min(100%, 480px); aspect-ratio: 1.38; }
+    .hero-portrait img { object-position: 53% 42%; }
+    .facts { gap: clamp(8px, 2vw, 18px); margin-top: clamp(14px, 2.5vh, 25px); font-size: clamp(16px, 4.3vw, 19px); line-height: 1.15; }
+    .facts { margin-top: clamp(14px, 2.5svh, 25px); }
+    .about { display: flex; flex-direction: column-reverse; gap: clamp(24px, 4vh, 46px); min-height: calc(100vh - 56px); padding: clamp(34px, 7vh, 74px) 0; }
+    .about { gap: clamp(24px, 4svh, 46px); min-height: calc(100svh - 56px); padding: clamp(34px, 7svh, 74px) 0; }
+    .about-copy { max-width: 58ch; }
+    .about-copy p { font-size: clamp(16px, 2.35vw, 18px); line-height: 1.48; }
+    .about-copy p + p { margin-top: clamp(12px, 2.5svh, 22px); }
+    .section-title { margin-bottom: clamp(18px, 3vh, 34px); font-size: clamp(68px, min(17vw, 12vh), 112px); }
+    .section-title { margin-bottom: clamp(18px, 3svh, 34px); font-size: clamp(68px, min(17vw, 12svh), 112px); }
+    .about-portrait { width: min(76%, 410px); aspect-ratio: 1.1; }
+    .about-portrait img { object-position: center 40%; }
+    .portfolio-section { min-height: auto; padding: 64px 0 70px; }
+    .portfolio-head { margin-bottom: 28px; }
+    .work-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+        .creator-kit { min-height: calc(100vh - 56px); padding: clamp(28px, 5vh, 52px) 0 clamp(32px, 6vh, 64px); }
+        .creator-kit { min-height: calc(100svh - 56px); padding: clamp(28px, 5svh, 52px) 0 clamp(32px, 6svh, 64px); }
+        .kit-grid { grid-template-columns: 1fr; gap: clamp(24px, 4vh, 40px); }
+        .kit-grid { gap: clamp(24px, 4svh, 40px); }
+        .device { width: min(82%, clamp(220px, calc(42vh - 16px), 420px)); justify-self: center; padding: clamp(12px, 3vh, 18px) clamp(12px, 3vh, 18px) clamp(14px, 3.5vh, 22px); }
+        .device { width: min(82%, clamp(220px, calc(42svh - 16px), 420px)); padding: clamp(12px, 3svh, 18px) clamp(12px, 3svh, 18px) clamp(14px, 3.5svh, 22px); }
+        .equipment { font-size: clamp(20px, min(5vw, 3.2vh), 30px); line-height: 1.18; }
+        .equipment { font-size: clamp(20px, min(5vw, 3.2svh), 30px); }
+        .equipment li { min-width: 0; gap: clamp(10px, 2vw, 14px); }
+        .equipment li + li { margin-top: clamp(6px, 1.1vh, 10px); }
+        .equipment li + li { margin-top: clamp(6px, 1.1svh, 10px); }
+        .equipment-icon { width: clamp(28px, min(6vw, 4.4vh), 36px); height: clamp(28px, min(6vw, 4.4vh), 36px); flex-basis: clamp(28px, min(6vw, 4.4vh), 36px); }
+        .equipment-icon { width: clamp(28px, min(6vw, 4.4svh), 36px); height: clamp(28px, min(6vw, 4.4svh), 36px); flex-basis: clamp(28px, min(6vw, 4.4svh), 36px); }
+        .equipment li span { min-width: 0; overflow-wrap: anywhere; }
+
+    .brands { padding: 62px 0 84px; }
+    .brand-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
+    .brand-media { inset: 12px; }
+    .footer { flex-direction: column; align-items: flex-start; gap: 32px; }
+    .footer-links { flex-wrap: wrap; }
+  }
+  @media (max-width: 820px) and (max-height: 760px) {
+    .hero { gap: 18px; padding: 20px 0 24px; }
+    .about { gap: 18px; padding: 22px 0; }
+    .name, .section-title { margin-bottom: 12px; font-size: clamp(60px, min(16vw, 11svh), 68px); }
+    .role { margin-bottom: 8px; font-size: 18px; }
+    .contacts { gap: 0; }
+    .hero-portrait { aspect-ratio: 1.65; }
+    .hero .facts { margin-top: 10px; font-size: 16px; line-height: 1.1; }
+    .about-portrait { width: min(72%, 360px); aspect-ratio: 1.22; }
+    .about-copy p + p { margin-top: 10px; }
+    .creator-kit { padding: clamp(18px, 3svh, 22px) 0 clamp(20px, 3.5svh, 26px); }
+    .kit-grid { gap: clamp(14px, 2.5svh, 18px); }
+    .device { width: min(70%, 240px, clamp(210px, calc(38svh - 16px), 240px)); padding: clamp(10px, 1.5svh, 12px) clamp(10px, 1.5svh, 12px) clamp(12px, 1.8svh, 14px); }
+    .equipment { font-size: clamp(18px, min(4.8vw, 2.8svh), 20px); }
+    .equipment li { gap: clamp(8px, 2vw, 10px); }
+    .equipment li + li { margin-top: clamp(3px, .6svh, 5px); }
+    .equipment-icon { width: clamp(24px, min(6vw, 3.8svh), 28px); height: clamp(24px, min(6vw, 3.8svh), 28px); flex-basis: clamp(24px, min(6vw, 3.8svh), 28px); }
+  }
+  @media (max-width: 420px) {
+    .shell { width: calc(100% - 32px); }
+    .site-brand { font-size: 28px; }
+    .facts { gap: 8px; font-size: 17px; }
+    .portfolio-title { font-size: 53px; }
+    .about-copy p { font-size: 17px; line-height: 1.48; }
+
+    .brands-title { font-size: 25vw; }
+    .brand-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+    .brand-media { inset: 10px; }
+  }
+  @media (prefers-reduced-motion: reduce) { html, html.scroll-ready { scroll-behavior: auto; } .reveal { opacity: 1; transform: none; transition: none; } .mobile-menu, .menu-toggle-icon, .menu-toggle-icon::before, .menu-toggle-icon::after { transition: none; } }
+</style>

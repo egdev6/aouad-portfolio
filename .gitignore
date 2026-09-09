@@ -1,0 +1,11 @@
+# Local development tool state
+.atl/
+.codegraph/
+.playwright-mcp/
+
+# Generated dependencies and Astro output
+node_modules/
+dist/
+.astro/
+lighthouse-reports/
+.lighthouseci/

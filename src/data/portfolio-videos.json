@@ -1,0 +1,74 @@
+[
+  {
+    "key": "apps-tech",
+    "videos": [
+      { "youtubeId": "" },
+      { "youtubeId": "" },
+      { "youtubeId": "" },
+      { "youtubeId": "" }
+    ]
+  },
+  {
+    "key": "education",
+    "videos": [
+      { "youtubeId": "" },
+      { "youtubeId": "" },
+      { "youtubeId": "" },
+      { "youtubeId": "" }
+    ]
+  },
+  {
+    "key": "lifestyle",
+    "videos": [
+      { "youtubeId": "" },
+      { "youtubeId": "" },
+      { "youtubeId": "" },
+      { "youtubeId": "" }
+    ]
+  },
+  {
+    "key": "travel-apps",
+    "videos": [
+      { "youtubeId": "" },
+      { "youtubeId": "" },
+      { "youtubeId": "" },
+      { "youtubeId": "" }
+    ]
+  },
+  {
+    "key": "gaming",
+    "videos": [
+      { "youtubeId": "" },
+      { "youtubeId": "" },
+      { "youtubeId": "" },
+      { "youtubeId": "" }
+    ]
+  },
+  {
+    "key": "services",
+    "videos": [
+      { "youtubeId": "" },
+      { "youtubeId": "" },
+      { "youtubeId": "" },
+      { "youtubeId": "" }
+    ]
+  },
+  {
+    "key": "beauty",
+    "videos": [
+      { "youtubeId": "" },
+      { "youtubeId": "" },
+      { "youtubeId": "" },
+      { "youtubeId": "" }
+    ]
+  },
+  {
+    "key": "events-hospitality",
+    "videos": [
+      { "youtubeId": "" },
+      { "youtubeId": "" },
+      { "youtubeId": "" },
+      { "youtubeId": "" }
+    ]
+  }
+]
